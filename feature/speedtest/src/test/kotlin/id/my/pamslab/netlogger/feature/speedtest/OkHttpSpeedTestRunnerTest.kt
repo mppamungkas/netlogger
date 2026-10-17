@@ -2,9 +2,16 @@ package id.my.pamslab.netlogger.feature.speedtest
 
 import id.my.pamslab.netlogger.core.model.Clock
 import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestConfig
+import id.my.pamslab.netlogger.core.model.speedtest.cloudflareLocation
 import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestProgress
+import id.my.pamslab.netlogger.core.model.speedtest.ThroughputResult
 import id.my.pamslab.netlogger.core.model.speedtest.ThroughputType
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.Dispatchers
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -87,6 +94,43 @@ class OkHttpSpeedTestRunnerTest {
         assertTrue(up.mbps!! > 0)
         assertTrue(uploaded.get() > 0)
         assertTrue(progress.any { it.phase == ThroughputType.DOWNLOAD && it.mbps != null })
+    }
+
+    @Test
+    fun `each phase is reported as it ends, with Cloudflare's location from CF-RAY`() = runBlocking {
+        server.cfRay = "a4bb84683e5ffd90-SIN"
+        val reported = mutableListOf<ThroughputResult>()
+        val results = OkHttpSpeedTestRunner(clock) { null }.run(config(), onResult = { reported += it }) {}
+
+        assertEquals("reported one by one, in order", results, reported)
+        assertEquals(listOf("SIN", "SIN", "SIN"), results.map { it.serverLocation })
+        server.cfRay = null
+        assertNull("a server without CF-RAY has no location", OkHttpSpeedTestRunner(clock) { null }.run(config()) {}.first().serverLocation)
+    }
+
+    @Test
+    fun `stopping during a slow download ends at once, not at the end of the phase`() = runBlocking {
+        server.blockDelayMs = 200 // ~320 kB/s per stream: each request runs far longer than the stop takes
+        val slow = config().copy(durationMs = 10_000, pingCount = 1)
+        var downloading = false
+        val test = launch(Dispatchers.Default) {
+            OkHttpSpeedTestRunner(clock) { null }.run(slow) { if (it.phase == ThroughputType.DOWNLOAD) downloading = true }
+        }
+        withTimeout(5_000) { while (!downloading) delay(20) }
+        val stopped = System.nanoTime()
+        test.cancelAndJoin()
+        val tookMs = (System.nanoTime() - stopped) / 1_000_000
+        assertTrue("stopped in $tookMs ms", tookMs < 1_500)
+        server.blockDelayMs = 0
+    }
+
+    @Test
+    fun `location code only from a CF-RAY suffix`() {
+        assertEquals("CGK", cloudflareLocation("8d1f0c2b3a4d5e6f-CGK"))
+        assertNull(cloudflareLocation(null))
+        assertNull(cloudflareLocation("8d1f0c2b3a4d5e6f"))
+        assertNull(cloudflareLocation("8d1f-sin"))
+        assertNull(cloudflareLocation("8d1f-SING"))
     }
 
     @Test

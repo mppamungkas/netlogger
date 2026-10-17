@@ -40,8 +40,6 @@
     <string name="live_speed_test">Speed test</string>
     <string name="live_speed_not_run">Not run in this session</string>
     <string name="live_speed_starting">starting</string>
-    <string name="live_speed_run">Run</string>
-    <string name="live_speed_public">Run on Cloudflare (public, for comparison)</string>
     <string name="live_capture">Capture</string>
     <string name="live_events">Events</string>
     <string name="live_no_events">No events in this session yet.</string>
@@ -51,4 +49,7 @@
     <string name="live_problem_recording">A recording was running (session %1$d). It was closed and keeps everything recorded until then.</string>
     <string name="live_problem_view">View report</string>
     <string name="live_problem_dismiss">Dismiss</string>
+    <string name="live_speed_private">Private server</string>
+    <string name="live_speed_cloudflare">Cloudflare</string>
+    <string name="live_speed_stop">Stop</string>
 </resources>

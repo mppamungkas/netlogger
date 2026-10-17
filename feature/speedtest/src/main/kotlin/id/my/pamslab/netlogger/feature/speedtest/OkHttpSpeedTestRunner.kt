@@ -2,6 +2,7 @@ package id.my.pamslab.netlogger.feature.speedtest
 
 import id.my.pamslab.netlogger.core.model.Clock
 import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestConfig
+import id.my.pamslab.netlogger.core.model.speedtest.cloudflareLocation
 import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestProgress
 import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestRunner
 import id.my.pamslab.netlogger.core.model.speedtest.ThroughputResult
@@ -57,15 +58,19 @@ class OkHttpSpeedTestRunner @Inject constructor(
         .cache(null)
         .build()
 
-    override suspend fun run(config: SpeedTestConfig, onProgress: (SpeedTestProgress) -> Unit): List<ThroughputResult> {
+    override suspend fun run(
+        config: SpeedTestConfig,
+        onResult: (ThroughputResult) -> Unit,
+        onProgress: (SpeedTestProgress) -> Unit,
+    ): List<ThroughputResult> {
         network.problem()?.let { problem ->
-            return ThroughputType.entries.map { failed(it, url(config, it), problem) }
+            return ThroughputType.entries.map { failed(it, url(config, it), problem).also(onResult) }
         }
         return withContext(Dispatchers.IO) {
             listOf(
-                ping(config, onProgress),
-                download(config, onProgress),
-                upload(config, onProgress),
+                ping(config, onProgress).also(onResult),
+                download(config, onProgress).also(onResult),
+                upload(config, onProgress).also(onResult),
             )
         }
     }
@@ -93,6 +98,7 @@ class OkHttpSpeedTestRunner @Inject constructor(
         val rtts = mutableListOf<Double>()
         var failures = 0
         var lastError: String? = null
+        var location: String? = null
         repeat(config.pingCount + 1) { i ->
             ensureActive()
             val url = uncached(config.pingUrl) ?: return@coroutineScope failed(ThroughputType.PING, config.pingUrl, BAD_URL)
@@ -101,6 +107,7 @@ class OkHttpSpeedTestRunner @Inject constructor(
             val sent = System.nanoTime()
             try {
                 call.execute().use { response ->
+                    location = location ?: response.location()
                     response.body?.bytes()
                     if (!response.isSuccessful) throw HttpStatusException(response)
                 }
@@ -122,14 +129,16 @@ class OkHttpSpeedTestRunner @Inject constructor(
             rttMinMs = rtts.minOrNull(), rttAvgMs = rtts.takeIf { it.isNotEmpty() }?.average(), rttMaxMs = rtts.maxOrNull(),
             jitterMs = jitter, lossPct = failures * 100.0 / config.pingCount,
             error = if (rtts.isEmpty()) lastError ?: "no reply" else null,
+            serverLocation = location,
         )
     }
 
     private suspend fun download(config: SpeedTestConfig, onProgress: (SpeedTestProgress) -> Unit) =
-        transfer(ThroughputType.DOWNLOAD, config.downloadUrl, config, config.maxDownloadBytes, onProgress) { url, bytes, limit ->
+        transfer(ThroughputType.DOWNLOAD, config.downloadUrl, config, config.maxDownloadBytes, onProgress) { url, bytes, limit, location ->
             val call = client.newCall(Request.Builder().url(url).header("Cache-Control", "no-cache").build())
             call to {
                 call.execute().use { response ->
+                    response.location()?.let { location.compareAndSet(null, it) }
                     if (!response.isSuccessful) throw HttpStatusException(response)
                     val source = response.body?.source() ?: throw IOException("no body")
                     val buffer = ByteArray(CHUNK_BYTES)
@@ -143,7 +152,7 @@ class OkHttpSpeedTestRunner @Inject constructor(
         }
 
     private suspend fun upload(config: SpeedTestConfig, onProgress: (SpeedTestProgress) -> Unit) =
-        transfer(ThroughputType.UPLOAD, config.uploadUrl, config, config.maxUploadBytes, onProgress) { url, bytes, limit ->
+        transfer(ThroughputType.UPLOAD, config.uploadUrl, config, config.maxUploadBytes, onProgress) { url, bytes, limit, location ->
             val body = object : RequestBody() {
                 override fun contentType() = OCTET_STREAM
                 override fun contentLength() = UPLOAD_REQUEST_BYTES
@@ -159,7 +168,12 @@ class OkHttpSpeedTestRunner @Inject constructor(
                 }
             }
             val call = client.newCall(Request.Builder().url(url).post(body).build())
-            call to { call.execute().use { response -> if (!response.isSuccessful) throw HttpStatusException(response) } }
+            call to {
+                call.execute().use { response ->
+                    response.location()?.let { location.compareAndSet(null, it) }
+                    if (!response.isSuccessful) throw HttpStatusException(response)
+                }
+            }
         }
 
     /**
@@ -172,7 +186,7 @@ class OkHttpSpeedTestRunner @Inject constructor(
         config: SpeedTestConfig,
         limit: Long,
         onProgress: (SpeedTestProgress) -> Unit,
-        request: (url: okhttp3.HttpUrl, bytes: AtomicLong, limit: Long) -> Pair<Call, () -> Unit>,
+        request: (url: okhttp3.HttpUrl, bytes: AtomicLong, limit: Long, location: AtomicReference<String?>) -> Pair<Call, () -> Unit>,
     ): ThroughputResult {
         if (uncached(base) == null) return failed(type, base, BAD_URL)
         val startMs = clock.wallTimeMs()
@@ -180,6 +194,7 @@ class OkHttpSpeedTestRunner @Inject constructor(
         val bytes = AtomicLong()
         val firstError = AtomicReference<String?>(null)
         val rejected = AtomicReference<String?>(null)
+        val location = AtomicReference<String?>(null)
         val open = Collections.synchronizedSet(mutableSetOf<Call>())
         val t0 = System.nanoTime()
         val deadline = t0 + config.durationMs * 1_000_000
@@ -189,7 +204,7 @@ class OkHttpSpeedTestRunner @Inject constructor(
                 launch(Dispatchers.IO) {
                     while (isActive && !done()) {
                         val url = uncached(base) ?: break
-                        val (call, execute) = request(url, bytes, limit)
+                        val (call, execute) = request(url, bytes, limit, location)
                         call.timeout().timeout((deadline - System.nanoTime()).coerceAtLeast(1), TimeUnit.NANOSECONDS)
                         open += call
                         try {
@@ -210,11 +225,16 @@ class OkHttpSpeedTestRunner @Inject constructor(
                 }
             }
             launch {
-                while (!done()) {
-                    delay(PROGRESS_MS)
-                    onProgress(SpeedTestProgress(type, mbps = mbps(bytes.get(), System.nanoTime() - t0)))
+                try {
+                    while (!done()) {
+                        delay(PROGRESS_MS)
+                        onProgress(SpeedTestProgress(type, mbps = mbps(bytes.get(), System.nanoTime() - t0)))
+                    }
+                } finally {
+                    // Also when the test is stopped: the workers block in socket reads and writes, which a coroutine
+                    // cancel does not interrupt; cancelling the calls does, at once.
+                    synchronized(open) { open.forEach(Call::cancel) }
                 }
-                synchronized(open) { open.forEach(Call::cancel) }
             }
         }
         val elapsedNs = (minOf(System.nanoTime(), deadline) - t0).coerceAtLeast(1)
@@ -226,8 +246,12 @@ class OkHttpSpeedTestRunner @Inject constructor(
             mbps = if (total > 0 && refusal == null) mbps(total, elapsedNs) else null,
             streams = config.streams, rttMinMs = null, rttAvgMs = null, rttMaxMs = null, jitterMs = null, lossPct = null,
             error = refusal ?: if (total == 0L) firstError.get() ?: "no data" else null,
+            serverLocation = location.get(),
         )
     }
+
+    /** Where the server answered from: Cloudflare's CF-RAY location code; null for servers without one. */
+    private fun Response.location(): String? = cloudflareLocation(header("CF-RAY"))
 
     /** A non-2xx answer: the server refused the request, or something on the way redirected it. */
     private class HttpStatusException(response: Response) : IOException(

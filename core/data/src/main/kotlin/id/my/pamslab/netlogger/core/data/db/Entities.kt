@@ -185,6 +185,8 @@ data class ThroughputTestEntity(
     val lossPct: Double?,
     val captureActive: Boolean,
     val error: String?,
+    /** Schema v3: the server's location code if it reports one (Cloudflare's CF-RAY suffix, e.g. "SIN"). */
+    val serverLocation: String? = null,
 )
 
 /**

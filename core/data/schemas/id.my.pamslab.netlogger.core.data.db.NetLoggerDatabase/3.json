@@ -1,0 +1,940 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "79a6cd6d07bacc24d6f0877e9d4826e8",
+    "entities": [
+      {
+        "tableName": "session",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uuid` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `startedElapsedNs` INTEGER NOT NULL, `endedAt` INTEGER, `endedElapsedNs` INTEGER, `endReason` TEXT, `label` TEXT, `scenario` TEXT, `notes` TEXT, `intervalMs` INTEGER NOT NULL, `deviceManufacturer` TEXT NOT NULL, `deviceModel` TEXT NOT NULL, `androidVersion` TEXT NOT NULL, `basebandVersion` TEXT, `appVersion` TEXT, `schemaVersion` INTEGER NOT NULL, `subscriptionId` INTEGER, `simSlot` INTEGER, `operatorName` TEXT, `mcc` TEXT, `mnc` TEXT, `captureFile` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedElapsedNs",
+            "columnName": "startedElapsedNs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "endedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "endedElapsedNs",
+            "columnName": "endedElapsedNs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "endReason",
+            "columnName": "endReason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "scenario",
+            "columnName": "scenario",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "intervalMs",
+            "columnName": "intervalMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceManufacturer",
+            "columnName": "deviceManufacturer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceModel",
+            "columnName": "deviceModel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "androidVersion",
+            "columnName": "androidVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "basebandVersion",
+            "columnName": "basebandVersion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "appVersion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "schemaVersion",
+            "columnName": "schemaVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subscriptionId",
+            "columnName": "subscriptionId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "simSlot",
+            "columnName": "simSlot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "operatorName",
+            "columnName": "operatorName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mcc",
+            "columnName": "mcc",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mnc",
+            "columnName": "mnc",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "captureFile",
+            "columnName": "captureFile",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_session_uuid",
+            "unique": true,
+            "columnNames": [
+              "uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_session_uuid` ON `${TABLE_NAME}` (`uuid`)"
+          }
+        ]
+      },
+      {
+        "tableName": "measurement",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `seq` INTEGER NOT NULL, `wallTimeMs` INTEGER NOT NULL, `elapsedRealtimeNs` INTEGER NOT NULL, `lat` REAL, `lon` REAL, `altitude` REAL, `speedMps` REAL, `bearing` REAL, `gpsAccuracy` REAL, `locationAgeMs` INTEGER, `locationStatus` TEXT NOT NULL, `networkType` TEXT NOT NULL, `overrideNetworkType` INTEGER, `dataNetworkType` INTEGER, `nsaLteServing` INTEGER NOT NULL, `nsaNrCellInfo` INTEGER NOT NULL, `nsaNrSignal` INTEGER NOT NULL, `serviceState` INTEGER, `dataState` INTEGER, `isRoaming` INTEGER, `operatorNumeric` TEXT, `cellInfoOrigin` TEXT NOT NULL, `cellBandwidthsJson` TEXT NOT NULL, `batteryLevel` INTEGER, `batteryCurrentUa` INTEGER, `batteryVoltageMv` INTEGER, `batteryTempC` REAL, `isCharging` INTEGER, `rxBytesTotal` INTEGER, `txBytesTotal` INTEGER, `rxBytesApp` INTEGER, `txBytesApp` INTEGER, `screenOn` INTEGER, `thermalStatus` INTEGER, `parseErrors` INTEGER NOT NULL, `warningCount` INTEGER NOT NULL, FOREIGN KEY(`sessionId`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seq",
+            "columnName": "seq",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wallTimeMs",
+            "columnName": "wallTimeMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "elapsedRealtimeNs",
+            "columnName": "elapsedRealtimeNs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lat",
+            "columnName": "lat",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "lon",
+            "columnName": "lon",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "altitude",
+            "columnName": "altitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "speedMps",
+            "columnName": "speedMps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "bearing",
+            "columnName": "bearing",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "gpsAccuracy",
+            "columnName": "gpsAccuracy",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "locationAgeMs",
+            "columnName": "locationAgeMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "locationStatus",
+            "columnName": "locationStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "networkType",
+            "columnName": "networkType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overrideNetworkType",
+            "columnName": "overrideNetworkType",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "dataNetworkType",
+            "columnName": "dataNetworkType",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "nsaLteServing",
+            "columnName": "nsaLteServing",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nsaNrCellInfo",
+            "columnName": "nsaNrCellInfo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nsaNrSignal",
+            "columnName": "nsaNrSignal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serviceState",
+            "columnName": "serviceState",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "dataState",
+            "columnName": "dataState",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isRoaming",
+            "columnName": "isRoaming",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "operatorNumeric",
+            "columnName": "operatorNumeric",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cellInfoOrigin",
+            "columnName": "cellInfoOrigin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cellBandwidthsJson",
+            "columnName": "cellBandwidthsJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "batteryLevel",
+            "columnName": "batteryLevel",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "batteryCurrentUa",
+            "columnName": "batteryCurrentUa",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "batteryVoltageMv",
+            "columnName": "batteryVoltageMv",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "batteryTempC",
+            "columnName": "batteryTempC",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "isCharging",
+            "columnName": "isCharging",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rxBytesTotal",
+            "columnName": "rxBytesTotal",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "txBytesTotal",
+            "columnName": "txBytesTotal",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rxBytesApp",
+            "columnName": "rxBytesApp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "txBytesApp",
+            "columnName": "txBytesApp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "screenOn",
+            "columnName": "screenOn",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "thermalStatus",
+            "columnName": "thermalStatus",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "parseErrors",
+            "columnName": "parseErrors",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "warningCount",
+            "columnName": "warningCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_measurement_sessionId_seq",
+            "unique": true,
+            "columnNames": [
+              "sessionId",
+              "seq"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_measurement_sessionId_seq` ON `${TABLE_NAME}` (`sessionId`, `seq`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "session",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "cell",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `measurementId` INTEGER NOT NULL, `rat` TEXT NOT NULL, `servingInferred` INTEGER NOT NULL, `reportedServing` INTEGER, `servingSource` TEXT, `isRegistered` INTEGER, `connectionStatus` TEXT, `ciOrNci` INTEGER, `tac` INTEGER, `pci` INTEGER, `arfcn` INTEGER, `band` INTEGER, `bandSource` TEXT, `bandwidthKhz` INTEGER, `mcc` TEXT, `mnc` TEXT, `rsrp` INTEGER, `rsrq` INTEGER, `sinr` INTEGER, `rssi` INTEGER, `cqi` INTEGER, `ta` INTEGER, `csiRsrp` INTEGER, `csiRsrq` INTEGER, `csiSinr` INTEGER, `rscp` INTEGER, `ecNo` INTEGER, `source` TEXT NOT NULL, `cellInfoAgeMs` INTEGER, FOREIGN KEY(`measurementId`) REFERENCES `measurement`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "measurementId",
+            "columnName": "measurementId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rat",
+            "columnName": "rat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "servingInferred",
+            "columnName": "servingInferred",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedServing",
+            "columnName": "reportedServing",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "servingSource",
+            "columnName": "servingSource",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isRegistered",
+            "columnName": "isRegistered",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "connectionStatus",
+            "columnName": "connectionStatus",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ciOrNci",
+            "columnName": "ciOrNci",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "tac",
+            "columnName": "tac",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "pci",
+            "columnName": "pci",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "arfcn",
+            "columnName": "arfcn",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "band",
+            "columnName": "band",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bandSource",
+            "columnName": "bandSource",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bandwidthKhz",
+            "columnName": "bandwidthKhz",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mcc",
+            "columnName": "mcc",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mnc",
+            "columnName": "mnc",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rsrpDbm",
+            "columnName": "rsrp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rsrqDb",
+            "columnName": "rsrq",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sinrDb",
+            "columnName": "sinr",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rssiDbm",
+            "columnName": "rssi",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cqi",
+            "columnName": "cqi",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "timingAdvance",
+            "columnName": "ta",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "csiRsrpDbm",
+            "columnName": "csiRsrp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "csiRsrqDb",
+            "columnName": "csiRsrq",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "csiSinrDb",
+            "columnName": "csiSinr",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rscpDbm",
+            "columnName": "rscp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "ecNoDb",
+            "columnName": "ecNo",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cellInfoAgeMs",
+            "columnName": "cellInfoAgeMs",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_cell_measurementId",
+            "unique": false,
+            "columnNames": [
+              "measurementId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_cell_measurementId` ON `${TABLE_NAME}` (`measurementId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "measurement",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "measurementId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "event",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `wallTimeMs` INTEGER NOT NULL, `elapsedRealtimeNs` INTEGER NOT NULL, `type` TEXT NOT NULL, `fromValue` TEXT, `toValue` TEXT, `lat` REAL, `lon` REAL, FOREIGN KEY(`sessionId`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wallTimeMs",
+            "columnName": "wallTimeMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "elapsedRealtimeNs",
+            "columnName": "elapsedRealtimeNs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromValue",
+            "columnName": "fromValue",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "toValue",
+            "columnName": "toValue",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lat",
+            "columnName": "lat",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "lon",
+            "columnName": "lon",
+            "affinity": "REAL"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_event_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_event_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "session",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "parse_warning",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `measurementId` INTEGER NOT NULL, `elapsedRealtimeNs` INTEGER NOT NULL, `code` TEXT NOT NULL, `rat` TEXT, `pci` INTEGER, `field` TEXT, `rawValue` TEXT, `lastRawValue` TEXT, `occurrences` INTEGER NOT NULL, `firstSeenMs` INTEGER NOT NULL, `lastSeenMs` INTEGER NOT NULL, FOREIGN KEY(`sessionId`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`measurementId`) REFERENCES `measurement`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "measurementId",
+            "columnName": "measurementId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "elapsedRealtimeNs",
+            "columnName": "elapsedRealtimeNs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rat",
+            "columnName": "rat",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pci",
+            "columnName": "pci",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "field",
+            "columnName": "field",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rawValue",
+            "columnName": "rawValue",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastRawValue",
+            "columnName": "lastRawValue",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "occurrences",
+            "columnName": "occurrences",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstSeenMs",
+            "columnName": "firstSeenMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSeenMs",
+            "columnName": "lastSeenMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_parse_warning_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_parse_warning_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          },
+          {
+            "name": "index_parse_warning_measurementId",
+            "unique": false,
+            "columnNames": [
+              "measurementId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_parse_warning_measurementId` ON `${TABLE_NAME}` (`measurementId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "session",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "measurement",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "measurementId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "throughput_test",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `startedAtMs` INTEGER NOT NULL, `startedElapsedNs` INTEGER NOT NULL, `type` TEXT NOT NULL, `serverUrl` TEXT NOT NULL, `durationMs` INTEGER, `bytes` INTEGER, `mbps` REAL, `streams` INTEGER, `rttMinMs` REAL, `rttAvgMs` REAL, `rttMaxMs` REAL, `jitterMs` REAL, `lossPct` REAL, `captureActive` INTEGER NOT NULL, `error` TEXT, `serverLocation` TEXT, FOREIGN KEY(`sessionId`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAtMs",
+            "columnName": "startedAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedElapsedNs",
+            "columnName": "startedElapsedNs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverUrl",
+            "columnName": "serverUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMs",
+            "columnName": "durationMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "bytes",
+            "columnName": "bytes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mbps",
+            "columnName": "mbps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "streams",
+            "columnName": "streams",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rttMinMs",
+            "columnName": "rttMinMs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "rttAvgMs",
+            "columnName": "rttAvgMs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "rttMaxMs",
+            "columnName": "rttMaxMs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "jitterMs",
+            "columnName": "jitterMs",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "lossPct",
+            "columnName": "lossPct",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "captureActive",
+            "columnName": "captureActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "error",
+            "columnName": "error",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "serverLocation",
+            "columnName": "serverLocation",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_throughput_test_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_throughput_test_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "session",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '79a6cd6d07bacc24d6f0877e9d4826e8')"
+    ]
+  }
+}

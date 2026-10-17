@@ -1,13 +1,11 @@
 package id.my.pamslab.netlogger.feature.settings
 
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -28,11 +25,10 @@ import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestConfig
 @Composable
 internal fun SpeedTestSettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val saved by viewModel.speedTest.collectAsStateWithLifecycle()
-    val publicTarget by viewModel.publicTarget.collectAsStateWithLifecycle()
     SettingsPage(stringResource(R.string.settings_speed_test), onBack) {
         HowItWorksCard(saved)
         ServerCard(saved, viewModel::save, viewModel::cleartextBlocked)
-        PublicTargetCard(publicTarget, viewModel::setPublicTarget)
+        PublicTargetCard()
     }
 }
 
@@ -102,17 +98,8 @@ private fun UrlField(value: String, onChange: (String) -> Unit, label: String, h
 }
 
 @Composable
-private fun PublicTargetCard(enabled: Boolean, onChange: (Boolean) -> Unit) {
-    SettingCard(stringResource(R.string.speed_public_title), stringResource(R.string.speed_public_info, SpeedTestConfig.CLOUDFLARE)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(if (enabled) R.string.on else R.string.off),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(checked = enabled, onCheckedChange = onChange)
-        }
-    }
+private fun PublicTargetCard() {
+    SettingCard(stringResource(R.string.speed_public_title), stringResource(R.string.speed_public_info, SpeedTestConfig.CLOUDFLARE)) {}
 }
 
 private const val MB = 1024L * 1024

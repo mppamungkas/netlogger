@@ -61,7 +61,7 @@ class SessionExporterTest {
         assertEquals(SessionJson.Counts(1_201, 1_201L * a56Cells().size, 1, 2, 1_200, 1), result.counts)
         val throughput = lines(files.getValue("throughput.csv"))
         assertEquals(2, throughput.size)
-        assertTrue(throughput[1].contains(",DOWNLOAD,https://speed.example.org/backend/garbage.php?ckSize=100,10000,52428800,41.94304,4,,,,,,false,"))
+        assertTrue(throughput[1].contains(",DOWNLOAD,https://speed.example.org/backend/garbage.php?ckSize=100,,10000,52428800,41.94304,4,,,,,,false,"))
         assertTrue("paged, not one query", dao.measurementQueries >= 3)
 
         val seqs = lines(files.getValue("measurements.csv")).drop(1).map { it.substringBefore(',').toLong() }

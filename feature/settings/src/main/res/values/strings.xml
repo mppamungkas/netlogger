@@ -8,9 +8,9 @@
     <string name="settings_logging">Logging</string>
     <string name="settings_logging_summary">Every %1$d ms · %2$s</string>
     <string name="settings_speed_test">Speed test</string>
-    <string name="settings_speed_test_summary_server">Your server: %1$s</string>
-    <string name="settings_speed_test_summary_none">No server set: speed test off</string>
-    <string name="settings_speed_test_summary_public">%1$s · Cloudflare on</string>
+    <string name="settings_speed_test_summary_server">Private server: %1$s</string>
+    <string name="settings_speed_test_summary_none">No private server set</string>
+    <string name="settings_speed_test_summary_public">%1$s · Cloudflare always on Live</string>
     <string name="settings_capture">Traffic capture</string>
     <string name="settings_capture_summary_all">All apps · MTU %1$s</string>
     <plurals name="settings_capture_summary_specific">
@@ -63,7 +63,7 @@
 
     <!-- Speed test -->
     <string name="speed_how_title">How the speed test works</string>
-    <string name="speed_how_info">Start it on the Live screen while a session is logging. It uses mobile data only: turn Wi-Fi off, or the test is refused.</string>
+    <string name="speed_how_info">Start it on the Live screen while a session is logging, with Private server or Cloudflare; Stop ends it early and keeps the finished parts. It uses mobile data only: turn Wi-Fi off, or the test is refused.</string>
     <plurals name="speed_how_ping">
         <item quantity="one">Ping: %1$d small request; average, jitter and loss.</item>
         <item quantity="other">Ping: %1$d small requests; average, jitter and loss.</item>
@@ -75,7 +75,7 @@
     </plurals>
     <string name="speed_how_data">One test can use up to about %1$d MB of your data plan.</string>
     <string name="speed_how_stored">Results are stored in the session with the server URL and the radio values of the same seconds. A test during a traffic capture is flagged, because the capture slows it down.</string>
-    <string name="speed_server_title">Your server</string>
+    <string name="speed_server_title">Private server</string>
     <string name="speed_server_info">The main target. Use a server you control, so results stay comparable between tests and days. For a LibreSpeed server, enter its address and tap Fill; any other web server works with three URLs.</string>
     <string name="speed_base_url">LibreSpeed address, e.g. http://203.0.113.7:8080</string>
     <string name="speed_fill">Fill LibreSpeed URLs</string>
@@ -87,10 +87,10 @@
     <string name="speed_upload_url_info">Accepts POST requests and throws the data away.</string>
     <string name="speed_cleartext_blocked">Plain HTTP to %1$s is not allowed in this build, so the test would fail. Use https://, or ask whoever builds the app to allow this host (netlogger.cleartextHosts).</string>
     <string name="speed_save">Save</string>
-    <string name="speed_saved">Saved. The Live screen shows \"Run speed test (my server)\" while logging.</string>
-    <string name="speed_not_saved">No server saved yet: the speed test is off.</string>
-    <string name="speed_public_title">Public target: Cloudflare</string>
-    <string name="speed_public_info">Optional, for comparison only. Adds a second button on the Live screen that tests against %1$s. Not your server and never the default: the result depends on Cloudflare\'s nearest site and its route, and many large tests in a row are blocked for a while (HTTP 429). Each result stores the URL it used.</string>
+    <string name="speed_saved">Saved. While logging, Private server on the Live screen tests against it.</string>
+    <string name="speed_not_saved">No private server saved yet: Private server on Live will say so. Cloudflare works without one.</string>
+    <string name="speed_public_title">Public comparison: Cloudflare</string>
+    <string name="speed_public_info">Always available as its own button on the Live screen; nothing to switch on. It tests against %1$s, for comparison only: not your server and never the default. The result depends on Cloudflare\'s nearest site and its route (the site\'s code, e.g. SIN for Singapore, is stored with the result), and many large tests in a row are blocked for a while (HTTP 429).</string>
 
     <!-- Traffic capture -->
     <string name="capture_what_title">How the traffic capture works</string>
@@ -239,9 +239,9 @@
     </string-array>
     <string name="help_speed_title">3. Speed test</string>
     <string-array name="help_speed">
-        <item>Needs a server, set in Settings › Speed test (a LibreSpeed server works). Start it with Run in the Speed test row on Live while a session is logging, with Wi-Fi off.</item>
+        <item>While a session is logging, with Wi-Fi off, start it on Live: Private server tests against your own server, set in Settings › Speed test (a LibreSpeed server works); Cloudflare tests against Cloudflare\'s public servers and needs no setting. Stop ends a test early and keeps the parts already finished.</item>
         <item>It measures ping, then download and upload for 10 seconds each. One test can use up to about 250 MB of your data plan.</item>
-        <item>The result depends on the radio (signal, 4G or 5G, how busy the cell is) and on the route to the server. Compare tests against the same server; the public Cloudflare target is only for comparison.</item>
+        <item>The result depends on the radio (signal, 4G or 5G, how busy the cell is) and on the route to the server. Compare tests against the same server; Cloudflare is only for comparison. With Cloudflare, the site that answered is stored with the result (e.g. SIN for Singapore): a far site means a longer route.</item>
     </string-array>
     <string name="help_capture_title">4. Traffic capture</string>
     <string-array name="help_capture">
@@ -337,7 +337,7 @@
         <item>Sessions and exports contain your precise location and track, the cells you used (which also give your location) and your phone model and SIM operator. Share them only with people who need them.</item>
         <item>A traffic capture contains the network traffic of the captured apps: which servers they contact, and the content of anything not encrypted. Handle capture files like private data.</item>
         <item>Problem reports (crashes, freezes) stay on the phone until you send one yourself; they contain no location, cell identities, Wi-Fi names or captured traffic.</item>
-        <item>Everything stays on the phone until you export it. NetLogger has no account, no analytics and no upload. It contacts only the map tile server (OpenStreetMap, for the area you view), the speed test server you set (and Cloudflare if you turn it on), and Google Play services, which provides the location.</item>
+        <item>Everything stays on the phone until you export it. NetLogger has no account, no analytics and no upload. It contacts only the map tile server (OpenStreetMap, for the area you view), your speed test server when you run a test (or Cloudflare when you run a Cloudflare test), and Google Play services, which provides the location.</item>
     </string-array>
     <string name="about_map_title">Map data</string>
     <string name="about_map_info">Map data © OpenStreetMap contributors, available under the Open Database License (openstreetmap.org/copyright). Map tiles from the OpenStreetMap Foundation\'s tile servers, used under their tile usage policy.</string>

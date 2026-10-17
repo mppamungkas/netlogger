@@ -63,6 +63,7 @@ class LoggingService : Service() {
                 val target = SpeedTestTarget.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_TARGET) } ?: SpeedTestTarget.PRIMARY
                 scope.launch { engine.runSpeedTest(target) }
             }
+            ACTION_SPEED_TEST_STOP -> engine.stopSpeedTest()
             // A restart without our intent (e.g. after the process was killed): don't resume silently.
             else -> stop()
         }
@@ -192,6 +193,7 @@ class LoggingService : Service() {
         private const val ACTION_STOP = "id.my.pamslab.netlogger.logging.STOP"
         private const val ACTION_MARKER = "id.my.pamslab.netlogger.logging.MARKER"
         private const val ACTION_SPEED_TEST = "id.my.pamslab.netlogger.logging.SPEED_TEST"
+        private const val ACTION_SPEED_TEST_STOP = "id.my.pamslab.netlogger.logging.SPEED_TEST_STOP"
         private const val EXTRA_TARGET = "target"
         private const val EXTRA_INTERVAL_MS = "intervalMs"
         private const val EXTRA_SCENARIO = "scenario"
@@ -217,6 +219,11 @@ class LoggingService : Service() {
 
         fun addMarker(context: Context) {
             context.startService(Intent(context, LoggingService::class.java).setAction(ACTION_MARKER))
+        }
+
+        /** Stops a running speed test; its finished phases are kept. */
+        fun stopSpeedTest(context: Context) {
+            context.startService(Intent(context, LoggingService::class.java).setAction(ACTION_SPEED_TEST_STOP))
         }
 
         /** Runs a speed test in the logging session; ignored when not logging. */

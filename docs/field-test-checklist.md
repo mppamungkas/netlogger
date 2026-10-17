@@ -219,6 +219,17 @@ java|native|anr --receiver-foreground`; `id.my.pamslab.netlogger.CrashTestVpnRec
 - [ ] Android ending NetLogger during a recording (low memory / battery limits): needs a long field run (no way to
       cause it without root)
 
+## Speed test buttons and Cloudflare location (CLAUDE.md 1.7.7)
+
+- [x] Database migrated 2 → 3 on the moto's debug install with its field data: 30 sessions, 13 274 ticks and the
+      earlier speed test rows kept (backup taken first) (2026-10-17)
+- [x] Private server without a server set: red "No private server set: Settings › Speed test", nothing runs
+- [x] Cloudflare: full test, "Cloudflare SIN" on Live, `serverLocation` = SIN in every row (moto, Tri)
+- [x] Stop during the download: ping kept, DOWNLOAD stored with error `stopped`, upload not run
+- [ ] Stop immediately on a slow link (unit test: 9.5 s before the fix, < 1.5 s after)
+- [ ] The A56 (Telkomsel): Cloudflare site code and a stop while uploading
+- [ ] The session stopped during a test: rows marked `session stopped`
+
 ## Before a release
 
 - [x] Release APK 0.2.0 (versionCode 2, build 5349cb9, signed with the release key, arm64-v8a + armeabi-v7a, 49 MB)

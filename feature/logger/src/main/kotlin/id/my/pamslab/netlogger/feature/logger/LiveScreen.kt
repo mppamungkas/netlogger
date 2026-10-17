@@ -102,14 +102,13 @@ private fun LiveContent(viewModel: LiveViewModel, captureRow: CaptureRowSlot, on
         is LiveUiState.Failed -> PlaceholderScreen("Live", "Sampling stopped: ${s.message}", modifier)
         is LiveUiState.Ready -> {
             val scenario by viewModel.scenario.collectAsStateWithLifecycle()
-            val publicSpeedTest by viewModel.publicSpeedTest.collectAsStateWithLifecycle()
             val intervalMs by viewModel.intervalMs.collectAsStateWithLifecycle()
             val open by viewModel.openSections.collectAsStateWithLifecycle()
             val problem by viewModel.newProblem.collectAsStateWithLifecycle()
             Column(modifier.fillMaxSize()) {
                 StatusBar(s, scenario, viewModel::selectScenario, intervalMs)
                 problem?.let { ProblemCard(it, onView = { onOpenProblem(it.id) }, onDismiss = { viewModel.dismissProblem(it.id) }) }
-                SnapshotView(s, publicSpeedTest, open, viewModel::setOpen, captureRow, Modifier.weight(1f))
+                SnapshotView(s, open, viewModel::setOpen, captureRow, Modifier.weight(1f))
             }
         }
     }
@@ -118,7 +117,6 @@ private fun LiveContent(viewModel: LiveViewModel, captureRow: CaptureRowSlot, on
 @Composable
 private fun SnapshotView(
     ui: LiveUiState.Ready,
-    publicSpeedTest: Boolean,
     open: Set<LiveSection>,
     onOpen: (LiveSection, Boolean) -> Unit,
     captureRow: CaptureRowSlot,
@@ -142,7 +140,7 @@ private fun SnapshotView(
             }
         }
         if (LiveSection.NEIGHBOURS in open) item { NeighborRows(neighbors) }
-        item { GpsAndDataSection(ui, publicSpeedTest, captureRow) }
+        item { GpsAndDataSection(ui, captureRow) }
         item { EventsSection(ui.events, recording = ui.logging is LoggingState.Running) }
         item {
             SectionHeader(stringResource(R.string.live_details), stringResource(R.string.live_details_hint), detailsOpen) {
@@ -368,7 +366,7 @@ private fun NeighborRows(neighbors: List<CellSample>) {
 
 /** GPS in two lines and the data route with its rates (decision 004). */
 @Composable
-private fun GpsAndDataSection(ui: LiveUiState.Ready, publicSpeedTest: Boolean, captureRow: CaptureRowSlot) {
+private fun GpsAndDataSection(ui: LiveUiState.Ready, captureRow: CaptureRowSlot) {
     val fix = ui.tick?.location ?: ui.location?.fix
     val status = ui.tick?.locationStatus ?: ui.location?.status
     val stale = (ui.locationAgeMs ?: 0) > STALE_AGE_MS
@@ -413,7 +411,7 @@ private fun GpsAndDataSection(ui: LiveUiState.Ready, publicSpeedTest: Boolean, c
                     }
                 }
             }
-            (ui.logging as? LoggingState.Running)?.let { SpeedTestRow(it.speedTest, publicSpeedTest) }
+            (ui.logging as? LoggingState.Running)?.let { SpeedTestRow(it.speedTest) }
             // Shows itself only while a session records or a capture is ending.
             captureRow { RowLabel(stringResource(R.string.live_capture)) }
         }
@@ -425,45 +423,53 @@ private fun RowLabel(text: String) {
     Text(text, Modifier.width(LABEL_WIDTH), style = MaterialTheme.typography.titleSmall)
 }
 
-/** The running session's speed test: the last result or the running phase, and Run (decision 004). */
+/**
+ * The running session's speed test: the last result or the running phase, and three buttons (2026-10-17): Private
+ * server (the user's, Settings), Cloudflare (public comparison, always offered) and Stop (keeps the finished phases).
+ */
 @Composable
-private fun SpeedTestRow(test: SpeedTestState?, publicTarget: Boolean) {
+private fun SpeedTestRow(test: SpeedTestState?) {
     val context = LocalContext.current
     val running = test is SpeedTestState.Running
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        RowLabel(stringResource(R.string.live_speed_test))
-        Column(Modifier.weight(1f)) {
-            when (test) {
-                null -> Text(stringResource(R.string.live_speed_not_run), style = MaterialTheme.typography.bodyMedium)
-                is SpeedTestState.Running -> {
-                    val p = test.progress
-                    Text(
-                        listOfNotNull(
-                            p?.phase?.name?.lowercase() ?: stringResource(R.string.live_speed_starting),
-                            p?.mbps?.let { "%.1f Mbps".format(Locale.ROOT, it) } ?: p?.rttMs?.let { "%.0f ms".format(Locale.ROOT, it) },
-                        ).joinToString(" "),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                is SpeedTestState.Refused -> Text(test.reason, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                is SpeedTestState.Done -> {
-                    Text(speedTestSummary(test.results), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
-                    test.results.mapNotNull { r -> r.error?.let { "${r.type.name.lowercase()}: $it" } }.forEach {
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            RowLabel(stringResource(R.string.live_speed_test))
+            Column(Modifier.weight(1f)) {
+                when (test) {
+                    null -> Text(stringResource(R.string.live_speed_not_run), style = MaterialTheme.typography.bodyMedium)
+                    is SpeedTestState.Running -> {
+                        val p = test.progress
+                        Text(
+                            listOfNotNull(
+                                p?.phase?.name?.lowercase() ?: stringResource(R.string.live_speed_starting),
+                                p?.mbps?.let { "%.1f Mbps".format(Locale.ROOT, it) } ?: p?.rttMs?.let { "%.0f ms".format(Locale.ROOT, it) },
+                            ).joinToString(" "),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    is SpeedTestState.Refused -> Text(test.reason, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    is SpeedTestState.Done -> {
+                        Text(speedTestTarget(test.results), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(speedTestSummary(test.results), style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
+                        test.results.mapNotNull { r -> r.error?.let { "${r.type.name.lowercase()}: $it" } }.forEach {
+                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
-            if (publicTarget) {
-                // Secondary, opt-in (Settings): a public server, not the reference measurement.
-                Text(
-                    stringResource(R.string.live_speed_public),
-                    Modifier.clickable(enabled = !running) { LoggingService.speedTest(context, SpeedTestTarget.PUBLIC) }.padding(vertical = 4.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (running) Color.Gray else MaterialTheme.colorScheme.primary,
-                )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val compact = PaddingValues(horizontal = 8.dp)
+            OutlinedButton(onClick = { LoggingService.speedTest(context, SpeedTestTarget.PRIMARY) }, enabled = !running, contentPadding = compact, modifier = Modifier.weight(1.3f)) {
+                Text(stringResource(R.string.live_speed_private), maxLines = 1)
+            }
+            OutlinedButton(onClick = { LoggingService.speedTest(context, SpeedTestTarget.PUBLIC) }, enabled = !running, contentPadding = compact, modifier = Modifier.weight(1.1f)) {
+                Text(stringResource(R.string.live_speed_cloudflare), maxLines = 1)
+            }
+            OutlinedButton(onClick = { LoggingService.stopSpeedTest(context) }, enabled = running, contentPadding = compact, modifier = Modifier.weight(0.8f)) {
+                Text(stringResource(R.string.live_speed_stop), maxLines = 1)
             }
         }
-        OutlinedButton(onClick = { LoggingService.speedTest(context) }, enabled = !running) { Text(stringResource(R.string.live_speed_run)) }
     }
 }
 

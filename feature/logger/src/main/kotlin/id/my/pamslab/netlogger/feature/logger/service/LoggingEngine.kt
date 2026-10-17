@@ -32,6 +32,9 @@ import id.my.pamslab.netlogger.feature.logger.LiveEvent
 import id.my.pamslab.netlogger.feature.logger.LiveEventTracker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
+import id.my.pamslab.netlogger.core.model.speedtest.ThroughputType
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,6 +105,8 @@ class LoggingEngine @Inject constructor(
     private val recentFixes = AtomicReference<List<LocationFix>>(emptyList())
     private val recorder = AtomicReference<SessionRecorder?>(null)
     private val speedTestBusy = AtomicBoolean(false)
+    private val speedTestJob = AtomicReference<Job?>(null)
+    private val speedTestStopRequested = AtomicBoolean(false)
 
     /** Closes sessions a killed process left open; skipped while a session is recording. */
     suspend fun recoverAbandonedSessions(): Int =
@@ -215,30 +220,80 @@ class LoggingEngine @Inject constructor(
      * phase used. Returns false when not logging, a test is already running, or no server is set.
      */
     suspend fun runSpeedTest(target: SpeedTestTarget = SpeedTestTarget.PRIMARY): Boolean {
-        val session = recorder.get() ?: return false
-        if (!speedTestBusy.compareAndSet(false, true)) return false
+        val session = recorder.get() ?: return false.also { log("speed test ($target) ignored: not logging") }
+        if (!speedTestBusy.compareAndSet(false, true)) return false.also { log("speed test ($target) ignored: one is running") }
+        speedTestJob.set(currentCoroutineContext()[Job])
+        speedTestStopRequested.set(false)
+        val config = when (target) {
+            SpeedTestTarget.PRIMARY -> speedTestSettings.config.value
+            SpeedTestTarget.PUBLIC -> SpeedTestConfig.cloudflare()
+        }
+        val captureBefore = capture.state.value.running
+        // Capture overhead (VPN) affects the result: flagged when a capture ran at its start or end.
+        fun flagged(r: ThroughputResult) = r.copy(captureActive = captureBefore || capture.state.value.running)
+        val finished = mutableListOf<ThroughputResult>()
+        var phase = ThroughputType.PING
         try {
-            val config = when (target) {
-                SpeedTestTarget.PRIMARY -> speedTestSettings.config.value
-                SpeedTestTarget.PUBLIC -> SpeedTestConfig.cloudflare()
-            }
             if (!config.isComplete) {
-                setSpeedTest(SpeedTestState.Refused(NO_SERVER))
+                setSpeedTest(SpeedTestState.Refused(if (target == SpeedTestTarget.PRIMARY) NO_PRIVATE_SERVER else NO_SERVER))
+                log("speed test ($target) refused: no server set")
                 return false
             }
             setSpeedTest(SpeedTestState.Running(null))
             log("speed test ($target) started against ${config.downloadUrl}")
-            val captureBefore = capture.state.value.running
-            val results = speedTestRunner.run(config) { setSpeedTest(SpeedTestState.Running(it)) }
-                // Capture overhead (VPN) affects the result: flagged when a capture ran at its start or end.
-                .map { it.copy(captureActive = captureBefore || capture.state.value.running) }
+            val results = speedTestRunner.run(config, onResult = { synchronized(finished) { finished += it } }) {
+                phase = it.phase
+                setSpeedTest(SpeedTestState.Running(it))
+            }.map(::flagged)
             results.forEach { session.addThroughput(it) }
-            log("speed test: " + results.joinToString { "${it.type} ${it.mbps ?: it.rttAvgMs ?: "–"} ${it.error ?: ""}".trim() })
+            log("speed test: " + results.joinToString { "${it.type} ${it.mbps ?: it.rttAvgMs ?: "–"} ${it.error ?: ""}".trim() } +
+                (results.firstNotNullOfOrNull { it.serverLocation }?.let { " · server location $it" } ?: ""))
             setSpeedTest(SpeedTestState.Done(results))
             return true
+        } catch (e: CancellationException) {
+            // Stop on Live or the end of the session: keep the finished phases, mark the interrupted one.
+            withContext(NonCancellable) {
+                val reason = if (speedTestStopRequested.get()) STOPPED_BY_USER else STOPPED_WITH_SESSION
+                val done = synchronized(finished) { finished.toList() }.map(::flagged)
+                val interrupted = ThroughputType.entries.firstOrNull { t -> done.none { it.type == t } }
+                    ?.let { t -> if (t.ordinal < phase.ordinal) phase else t }
+                val stored = done + listOfNotNull(
+                    interrupted?.let { t ->
+                        flagged(
+                            ThroughputResult(
+                                t, clock.wallTimeMs(), clock.elapsedRealtimeNs(), urlOf(config, t),
+                                null, null, null, null, null, null, null, null, null,
+                                error = reason, serverLocation = done.firstNotNullOfOrNull { it.serverLocation },
+                            ),
+                        )
+                    },
+                )
+                try {
+                    stored.forEach { session.addThroughput(it) }
+                } catch (store: Exception) {
+                    log("speed test results not stored: $store")
+                }
+                log("speed test $reason: kept ${done.size} finished phase(s)")
+                setSpeedTest(SpeedTestState.Done(stored))
+            }
+            throw e
         } finally {
+            speedTestJob.set(null)
             speedTestBusy.set(false)
         }
+    }
+
+    /** Stops a running speed test (Live's Stop): finished phases are kept, the interrupted one is stored as stopped. */
+    fun stopSpeedTest() {
+        val job = speedTestJob.get() ?: return
+        speedTestStopRequested.set(true)
+        job.cancel()
+    }
+
+    private fun urlOf(config: SpeedTestConfig, type: ThroughputType) = when (type) {
+        ThroughputType.PING -> config.pingUrl
+        ThroughputType.DOWNLOAD -> config.downloadUrl
+        ThroughputType.UPLOAD -> config.uploadUrl
     }
 
     private fun setSpeedTest(value: SpeedTestState) =
@@ -303,6 +358,9 @@ class LoggingEngine @Inject constructor(
         const val NS_PER_MS = 1_000_000L
         const val FIX_HISTORY = 5
         const val NO_SERVER = "No speed test server set (Settings)"
+        const val NO_PRIVATE_SERVER = "No private server set: Settings › Speed test"
+        const val STOPPED_BY_USER = "stopped"
+        const val STOPPED_WITH_SESSION = "session stopped"
 
         /** Pure: newest fix taken at or before the tick; the oldest one if all are newer. */
         fun buildTick(

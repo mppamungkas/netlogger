@@ -16,7 +16,7 @@ abstract class NetLoggerDatabase : RoomDatabase() {
     abstract fun coverageDao(): CoverageDao
 
     companion object {
-        const val VERSION = 2
+        const val VERSION = 3
         const val NAME = "netlogger.db"
     }
 }

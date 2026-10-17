@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.pamslab.netlogger.core.data.SessionRepository
 import id.my.pamslab.netlogger.core.data.LoggingSettings
-import id.my.pamslab.netlogger.core.data.SpeedTestSettings
 import id.my.pamslab.netlogger.core.location.LocationProvider
 import id.my.pamslab.netlogger.core.device.DeviceContextSource
 import id.my.pamslab.netlogger.core.diagnostics.Problem
@@ -85,7 +84,6 @@ class LiveViewModel @Inject constructor(
     engine: LoggingEngine,
     clock: Clock,
     repository: SessionRepository,
-    speedTestSettings: SpeedTestSettings,
     loggingSettings: LoggingSettings,
     private val livePrefs: LivePrefs,
     private val routeSource: NetworkRouteSource,
@@ -102,8 +100,6 @@ class LiveViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) { problemReports.markSeen(id) }
     }
 
-    /** The public secondary speed test target is offered (Settings). */
-    val publicSpeedTest: StateFlow<Boolean> = speedTestSettings.publicTargetEnabled
 
     /** Tick interval of the next session (Settings). */
     val intervalMs: StateFlow<Long> = loggingSettings.intervalMs

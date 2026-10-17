@@ -10,6 +10,7 @@ import id.my.pamslab.netlogger.core.model.radio.ConnectionStatus
 import id.my.pamslab.netlogger.core.model.radio.NetworkType
 import id.my.pamslab.netlogger.core.model.radio.Rat
 import id.my.pamslab.netlogger.core.model.session.Scenario
+import id.my.pamslab.netlogger.core.model.speedtest.SpeedTestConfig
 import id.my.pamslab.netlogger.core.model.speedtest.ThroughputResult
 import id.my.pamslab.netlogger.core.model.speedtest.ThroughputType
 import java.util.Locale
@@ -195,4 +196,11 @@ internal fun speedTestSummary(results: List<ThroughputResult>): String {
     val rates = listOfNotNull(down, up).joinToString("  ").takeIf { it.isNotEmpty() }?.let { "$it Mbps" }
     val ping = results.firstOrNull { it.type == ThroughputType.PING && it.error == null }?.rttAvgMs?.let { "%.0f ms".format(Locale.ROOT, it) }
     return listOfNotNull(rates, ping).joinToString(" · ").ifEmpty { "–" }
+}
+
+/** "Cloudflare SIN" / "Private server": which server a finished test used, with the location it reported. */
+internal fun speedTestTarget(results: List<ThroughputResult>): String {
+    val cloudflare = results.any { it.serverUrl.startsWith(SpeedTestConfig.CLOUDFLARE) }
+    val location = results.firstNotNullOfOrNull { it.serverLocation }
+    return listOfNotNull(if (cloudflare) "Cloudflare" else "Private server", location).joinToString(" ")
 }

@@ -241,7 +241,8 @@ server). Align with measurements.csv by `startedElapsedNs`.
 | `startedAtMs` | ms | Phase start, Unix epoch |
 | `startedElapsedNs` | ns | Phase start since boot (sync key) |
 | `type` | | `PING`, `DOWNLOAD` or `UPLOAD` |
-| `serverUrl` | | URL the phase used, as set in Settings (each request adds a unique `nl` query parameter against caches). The user's server, or `https://speed.cloudflare.com/…` for the opt-in public secondary target |
+| `serverUrl` | | URL the phase used (each request adds a unique `nl` query parameter against caches): the user's private server set in Settings, or `https://speed.cloudflare.com/…` for the public Cloudflare test |
+| `serverLocation` | | Where the server answered from, when it says so: Cloudflare's location code from the `CF-RAY` response header, an IATA airport code such as `SIN` (Singapore) or `CGK` (Jakarta). Empty for servers that do not report one and for rows recorded before schema v3 |
 | `durationMs` | ms | Phase time actually measured |
 | `bytes` | bytes | DOWNLOAD: bytes read; UPLOAD: bytes handed to the socket (the last socket buffer may still be in flight) |
 | `mbps` | Mbit/s | bytes × 8 / phase time / 10^6, whole phase incl. TCP ramp-up; empty when the server refused (HTTP error) or nothing was transferred |
@@ -252,7 +253,7 @@ server). Align with measurements.csv by `startedElapsedNs`.
 | `jitterMs` | ms | PING: mean absolute difference between consecutive round trips |
 | `lossPct` | % | PING: failed counted requests (3 s timeout each) |
 | `captureActive` | | A traffic capture was running when the test started: its overhead may lower the result |
-| `error` | | Why the phase failed or was refused; empty when it worked. A failed phase keeps what it measured. Redirects are never followed: `HTTP 302 (redirect to <host>)` usually means the operator's captive portal (e.g. `bimatri.ioh.co.id` when Tri's data quota is used up), not the server |
+| `error` | | Why the phase failed or was refused; empty when it worked. A failed phase keeps what it measured. `stopped` / `session stopped`: the user pressed Stop, or the session ended, during this phase; phases finished before are kept. Redirects are never followed: `HTTP 302 (redirect to <host>)` usually means the operator's captive portal (e.g. `bimatri.ioh.co.id` when Tri's data quota is used up), not the server |
 
 Limits per test: 10 s per throughput phase, at most 200 MB download and 50 MB upload.
 

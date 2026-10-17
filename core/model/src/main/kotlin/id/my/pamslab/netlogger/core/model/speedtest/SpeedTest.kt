@@ -75,6 +75,8 @@ data class ThroughputResult(
     /** Phase 3: traffic capture was running (adds overhead). */
     val captureActive: Boolean = false,
     val error: String? = null,
+    /** Where the server answered from, if it says: Cloudflare's location code from CF-RAY (e.g. "SIN"); null otherwise. */
+    val serverLocation: String? = null,
 )
 
 /** Progress for the UI. */
@@ -82,5 +84,20 @@ data class SpeedTestProgress(val phase: ThroughputType, val mbps: Double? = null
 
 /** Runs ping, download and upload in that order against [SpeedTestConfig]; implemented in feature:speedtest. */
 interface SpeedTestRunner {
-    suspend fun run(config: SpeedTestConfig, onProgress: (SpeedTestProgress) -> Unit): List<ThroughputResult>
+    /**
+     * [onResult] gets each phase as soon as it is done, so a test stopped half-way keeps the finished phases. It comes
+     * before [onProgress], so a trailing lambda stays the progress callback.
+     */
+    suspend fun run(
+        config: SpeedTestConfig,
+        onResult: (ThroughputResult) -> Unit = {},
+        onProgress: (SpeedTestProgress) -> Unit,
+    ): List<ThroughputResult>
 }
+
+/**
+ * Cloudflare's location code from a CF-RAY header ("a4bb84683e5ffd90-SIN" -> "SIN": the edge's IATA airport code);
+ * null for anything else.
+ */
+fun cloudflareLocation(cfRay: String?): String? =
+    cfRay?.substringAfterLast('-', "")?.trim()?.takeIf { it.length == 3 && it.all(Char::isUpperCase) }

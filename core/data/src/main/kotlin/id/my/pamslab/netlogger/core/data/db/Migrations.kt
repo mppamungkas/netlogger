@@ -18,5 +18,12 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+/** v2 → v3: throughput_test.serverLocation (Cloudflare's location code); existing rows get NULL. */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `throughput_test` ADD COLUMN `serverLocation` TEXT")
+    }
+}
+
 /** Every migration, in order; registered with the database builder. */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)

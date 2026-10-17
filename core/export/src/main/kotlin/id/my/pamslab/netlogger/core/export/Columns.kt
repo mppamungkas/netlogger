@@ -106,6 +106,7 @@ class Columns(time: IsoTime) {
         col("startedElapsedNs") { it.startedElapsedNs },
         col("type") { it.type },
         col("serverUrl") { it.serverUrl },
+        col("serverLocation") { it.serverLocation },
         col("durationMs") { it.durationMs },
         col("bytes") { it.bytes },
         col("mbps") { it.mbps },

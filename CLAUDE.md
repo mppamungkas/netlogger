@@ -1,6 +1,6 @@
 # NetLogger: Android Cellular / 5G NSA Drive Test Logger + Traffic Capture
 
-**CLAUDE.md version 1.7.6** · last updated 2026-10-16
+**CLAUDE.md version 1.7.7** · last updated 2026-10-17
 **License:** NetLogger is licensed under **GNU GPL v3** (see `LICENSE`).
 
 ### Project status
@@ -8,6 +8,7 @@
 - Cell parsing approach: see `docs/decisions/001-cell-parsing.md` (approved decision is binding).
 
 ### Changelog
+- **1.7.7:** Speed test on Live: three buttons, Private server (the user's server from Settings; a red note when none is set), Cloudflare (public comparison, always offered, never the default; the Settings on/off switch is gone) and Stop (finished phases are kept, the interrupted one is stored with `error` = `stopped`, or `session stopped` when the session ends during a test). Schema v3: `throughput_test.serverLocation`, Cloudflare's site code from the `CF-RAY` header (e.g. `SIN`), migration 2→3 tested.
 - **1.7.6:** Release builds: signed with the release key from `local.properties` (`netlogger.signing.*`, never in the repo; unsigned without it), arm64-v8a + armeabi-v7a only, version 0.2.0. Debug builds have their own app ID `id.my.pamslab.netlogger.debug` ("NetLogger debug"), so debug and release install side by side, each with its own data; adb component names keep the class package (`id.my.pamslab.netlogger.debug/id.my.pamslab.netlogger.MainActivity`).
 - **1.7.5:** Problem reports without the Play Store (`docs/decisions/005-problem-reports.md`, new module `core:diagnostics`): crashes (Java with stack trace, native with a tombstone summary), ANRs and Android ending NetLogger during a recording, from `ApplicationExitInfo` plus an uncaught-exception handler in both processes; a card on Live, Settings › Problem reports (view, share, public GitHub issue, delete; raw tombstone only if the user ticks it), Describe a problem. Nothing is sent automatically; reports contain no location, cell identities, SSID or capture content. Debug builds: `CrashTestReceiver` for tests.
 - **1.7.4:** Live is a dashboard (`docs/decisions/004-live-dashboard.md`): status bar (recording time, ticks, Marker/Stop; scenario and Start when idle), operator and network type in words, one serving-cell table (NR merged from CellInfo and SignalStrength, "SS" marks the latter), GPS, data route (Wi-Fi SSID / cellular, `NetworkRouteSource`, Live only, not stored) with 5 s average rates, compact speed test and capture rows, the last events ("cell change", never "handover"), raw values under Details. Tapping the open Map tab no longer rebuilds (and crashed) the map.
@@ -244,7 +245,7 @@ Schema v1 is frozen from the first real field session on; after that, every sche
 `id, sessionId, wallTimeMs, elapsedRealtimeNs, type (RAT_CHANGE, PCI_CHANGE_LTE, PCI_CHANGE_NR, NR_ADDED, NR_REMOVED, NO_SERVICE, SERVICE_RESTORED, GPS_LOST, GPS_RESTORED, USER_MARKER), fromValue, toValue, lat, lon`
 
 **`throughput_test`** (Phase 2)
-`id, sessionId, startedAtMs, startedElapsedNs, type (PING/DOWNLOAD/UPLOAD), serverUrl, durationMs, bytes, mbps, streams, rttMinMs, rttAvgMs, rttMaxMs, jitterMs, lossPct, captureActive, error`
+`id, sessionId, startedAtMs, startedElapsedNs, type (PING/DOWNLOAD/UPLOAD), serverUrl, durationMs, bytes, mbps, streams, rttMinMs, rttAvgMs, rttMaxMs, jitterMs, lossPct, captureActive, error, serverLocation (v3)`
 
 Timing rules:
 - Every row stores **both** `wallTimeMs` and `elapsedRealtimeNs`. `elapsedRealtimeNs` is the sync key with pcap files and is immune to clock changes.
@@ -281,7 +282,7 @@ Optional: a "G-NetTrack-compatible" column layout for side-by-side validation. I
   RSRP colors: > -80 green, -80 to -95 yellow, -95 to -110 orange, < -110 red, null gray (integer dBm: -80 … -95 yellow, -96 … -110 orange).
   SINR colors (LTE RSSNR and NR SS-SINR): >= 20 green, 13 to < 20 yellow, 0 to < 13 orange, < 0 red, null gray.
 - **Sessions:** list with estimated size on the phone and of the export, rename/label, notes, export, delete (with confirmation).
-- **Settings** (`docs/decisions/003-settings-ux.md`): Logging (interval, default scenario, data SIM shown), Speed test (server URLs, public secondary target), Traffic capture (all/specific apps, MTU); Phone capabilities (live check + recorded share, Copy report), How to use, Problem reports (decision 005), About (licences, privacy, credits). Users are teachers and students: every option explains itself; English only, texts in strings.xml.
+- **Settings** (`docs/decisions/003-settings-ux.md`): Logging (interval, default scenario, data SIM shown), Speed test (private server URLs; Cloudflare needs no setting), Traffic capture (all/specific apps, MTU); Phone capabilities (live check + recorded share, Copy report), How to use, Problem reports (decision 005), About (licences, privacy, credits). Users are teachers and students: every option explains itself; English only, texts in strings.xml.
 
 ## Phase 3: Traffic capture
 NetLogger's own `VpnService` (milestone 11; plan and decisions in `docs/decisions/002-native-capture.md`):

@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -69,24 +70,31 @@ class LoggingEngineTest {
         override fun deviceInfo() = DeviceInfo("motorola", "moto g45 5G", "15", 35, "M6375", "0.1")
     }
 
-    private class FakeRunner : SpeedTestRunner {
+    /** [hangAfterPing]: reports the ping, then waits in the download until cancelled (a test stopped half-way). */
+    private class FakeRunner(private val hangAfterPing: Boolean = false) : SpeedTestRunner {
         var runs = 0
         var lastConfig: SpeedTestConfig? = null
-        override suspend fun run(config: SpeedTestConfig, onProgress: (SpeedTestProgress) -> Unit): List<ThroughputResult> {
+        override suspend fun run(
+            config: SpeedTestConfig,
+            onResult: (ThroughputResult) -> Unit,
+            onProgress: (SpeedTestProgress) -> Unit,
+        ): List<ThroughputResult> {
             runs++
             lastConfig = config
-            onProgress(SpeedTestProgress(ThroughputType.DOWNLOAD, mbps = 12.0))
-            return ThroughputType.entries.map {
-                ThroughputResult(it, 0, 0, config.pingUrl, 10_000, 1_000, 12.0, 4, null, null, null, null, null)
+            val results = ThroughputType.entries.map {
+                ThroughputResult(it, 0, 0, config.pingUrl, 10_000, 1_000, 12.0, 4, null, null, null, null, null, serverLocation = "SIN")
             }
+            onResult(results[0])
+            onProgress(SpeedTestProgress(ThroughputType.DOWNLOAD, mbps = 12.0))
+            if (hangAfterPing) awaitCancellation()
+            results.drop(1).forEach(onResult)
+            return results
         }
     }
 
     private class FakeSettings(config: SpeedTestConfig = SpeedTestConfig.libreSpeed("https://speed.example.org")) : SpeedTestSettings {
         override val config = MutableStateFlow(config)
-        override val publicTargetEnabled = MutableStateFlow(false)
         override fun save(pingUrl: String, downloadUrl: String, uploadUrl: String) = Unit
-        override fun setPublicTargetEnabled(enabled: Boolean) = Unit
     }
 
     private class FakeRepository : SessionRepository {
@@ -283,7 +291,7 @@ class LoggingEngineTest {
         val job2 = launch { noServer.run(1_000, null) }
         advanceTimeBy(1_500)
         assertFalse(noServer.runSpeedTest())
-        assertEquals(SpeedTestState.Refused(LoggingEngine.NO_SERVER), (noServer.state.value as LoggingState.Running).speedTest)
+        assertEquals(SpeedTestState.Refused(LoggingEngine.NO_PRIVATE_SERVER), (noServer.state.value as LoggingState.Running).speedTest)
         assertEquals("the runner was not called again", 1, runner.runs)
         job2.cancel()
     }
@@ -300,6 +308,43 @@ class LoggingEngineTest {
         assertTrue(engine.runSpeedTest(SpeedTestTarget.PUBLIC))
         assertEquals(SpeedTestConfig.cloudflare(), runner.lastConfig)
         assertTrue(repo.throughput.all { it.serverUrl.startsWith(SpeedTestConfig.CLOUDFLARE) })
+        job.cancel()
+    }
+
+    @Test
+    fun `Stop keeps the finished phases and stores the interrupted one as stopped`() = runTest {
+        val clock = VirtualClock(this)
+        val repo = FakeRepository()
+        val engine = LoggingEngine(radio(clock), FakeLocation(), FakeDevice, clock, repo, FakeRunner(hangAfterPing = true), FakeSettings(), CaptureStateHolder())
+        val job = launch { engine.run(1_000, null) }
+        advanceTimeBy(1_500)
+        val test = launch { engine.runSpeedTest(SpeedTestTarget.PUBLIC) }
+        runCurrent()
+        engine.stopSpeedTest()
+        runCurrent()
+
+        assertTrue(test.isCancelled)
+        assertEquals(listOf(ThroughputType.PING, ThroughputType.DOWNLOAD), repo.throughput.map { it.type })
+        assertEquals(listOf(null, LoggingEngine.STOPPED_BY_USER), repo.throughput.map { it.error })
+        assertEquals("the stopped row keeps the server's location", listOf("SIN", "SIN"), repo.throughput.map { it.serverLocation })
+        val done = (engine.state.value as LoggingState.Running).speedTest as SpeedTestState.Done
+        assertEquals(2, done.results.size)
+        job.cancel()
+    }
+
+    @Test
+    fun `a session ending during a test keeps the finished phases as session stopped`() = runTest {
+        val clock = VirtualClock(this)
+        val repo = FakeRepository()
+        val engine = LoggingEngine(radio(clock), FakeLocation(), FakeDevice, clock, repo, FakeRunner(hangAfterPing = true), FakeSettings(), CaptureStateHolder())
+        val job = launch { engine.run(1_000, null) }
+        advanceTimeBy(1_500)
+        val test = launch { engine.runSpeedTest() }
+        runCurrent()
+        test.cancel() // what the service does when the session stops
+        runCurrent()
+
+        assertEquals(listOf(null, LoggingEngine.STOPPED_WITH_SESSION), repo.throughput.map { it.error })
         job.cancel()
     }
 

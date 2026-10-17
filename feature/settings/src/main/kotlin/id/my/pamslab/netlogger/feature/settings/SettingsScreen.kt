@@ -32,7 +32,6 @@ import java.net.URI
 @Composable
 internal fun SettingsScreen(onOpen: (Any) -> Unit, modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel()) {
     val speedTest by viewModel.speedTest.collectAsStateWithLifecycle()
-    val publicTarget by viewModel.publicTarget.collectAsStateWithLifecycle()
     val interval by viewModel.intervalMs.collectAsStateWithLifecycle()
     val scenario by viewModel.defaultScenario.collectAsStateWithLifecycle()
     val captureAll by viewModel.captureAllApps.collectAsStateWithLifecycle()
@@ -55,10 +54,9 @@ internal fun SettingsScreen(onOpen: (Any) -> Unit, modifier: Modifier = Modifier
         val host = remember(speedTest) { runCatching { URI(speedTest.downloadUrl.trim()).host }.getOrNull() }
         val server = if (speedTest.isComplete) stringResource(R.string.settings_speed_test_summary_server, host ?: speedTest.downloadUrl)
             else stringResource(R.string.settings_speed_test_summary_none)
-        SettingsEntry(
-            stringResource(R.string.settings_speed_test),
-            if (publicTarget) stringResource(R.string.settings_speed_test_summary_public, server) else server,
-        ) { onOpen(SpeedTestSettingsRoute) }
+        SettingsEntry(stringResource(R.string.settings_speed_test), stringResource(R.string.settings_speed_test_summary_public, server)) {
+            onOpen(SpeedTestSettingsRoute)
+        }
         val mtu = if (captureMtu == CaptureSettings.MTU_FAST) "10 000" else captureMtu.toString()
         SettingsEntry(
             stringResource(R.string.settings_capture),

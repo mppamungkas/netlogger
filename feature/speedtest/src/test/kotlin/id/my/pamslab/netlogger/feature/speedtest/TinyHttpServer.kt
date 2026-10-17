@@ -19,6 +19,12 @@ class TinyHttpServer(private val handler: (path: String, body: InputStream, cont
 
     @Volatile private var running = true
 
+    /** Sent as a CF-RAY header with every response when set (as Cloudflare does). */
+    @Volatile var cfRay: String? = null
+
+    /** Pause after every 64 kB block of a response body: a slow link. */
+    @Volatile var blockDelayMs: Long = 0
+
     init {
         thread(isDaemon = true) {
             while (running) {
@@ -42,13 +48,15 @@ class TinyHttpServer(private val handler: (path: String, body: InputStream, cont
             val (status, responseBytes) = handler(path, LimitedStream(input, length), length)
             val out = s.getOutputStream()
             val location = if (status in 300..399) "Location: http://127.0.0.1:$port/portal\r\n" else ""
-            out.write("HTTP/1.1 $status X\r\n${location}Content-Length: $responseBytes\r\nConnection: close\r\n\r\n".toByteArray())
+            val ray = cfRay?.let { "CF-RAY: $it\r\n" }.orEmpty()
+            out.write("HTTP/1.1 $status X\r\n${location}${ray}Content-Length: $responseBytes\r\nConnection: close\r\n\r\n".toByteArray())
             val block = ByteArray(64 * 1024) { it.toByte() }
             var left = responseBytes
             while (left > 0) {
                 val n = minOf(left, block.size.toLong()).toInt()
                 out.write(block, 0, n)
                 left -= n
+                if (blockDelayMs > 0) { out.flush(); Thread.sleep(blockDelayMs) }
             }
             out.flush()
         } catch (_: Exception) {

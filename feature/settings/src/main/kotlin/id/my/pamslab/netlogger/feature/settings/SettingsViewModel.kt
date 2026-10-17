@@ -28,11 +28,9 @@ class SettingsViewModel @Inject constructor(
     val intervalMs: StateFlow<Long> = logging.intervalMs
     val defaultScenario: StateFlow<Scenario?> = logging.defaultScenario
     val speedTest: StateFlow<SpeedTestConfig> = settings.config
-    val publicTarget: StateFlow<Boolean> = settings.publicTargetEnabled
 
     fun save(pingUrl: String, downloadUrl: String, uploadUrl: String) = settings.save(pingUrl, downloadUrl, uploadUrl)
 
-    fun setPublicTarget(enabled: Boolean) = settings.setPublicTargetEnabled(enabled)
 
     /** Hosts of plain-HTTP URLs this build does not allow (network security config); empty when all are fine. */
     fun cleartextBlocked(urls: List<String>): List<String> =

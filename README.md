@@ -51,8 +51,8 @@ only** (no root, no vendor diagnostic interfaces), and it never crashes on missi
 - **Sessions:** list with the estimated size on the phone and of the export, label, notes, scenario, charts (RSRP and
   SINR over time, network type timeline), export, delete.
 - **Speed test:** ping, download and upload over mobile data against a server you set (for example your own
-  [LibreSpeed](https://github.com/librespeed/speedtest) server). Cloudflare is an optional, clearly labelled
-  secondary target. Redirects are never followed, so an operator's captive portal is reported as an error, not as a
+  [LibreSpeed](https://github.com/librespeed/speedtest) server), or against Cloudflare for comparison, with Stop to end
+  a test early; Cloudflare's answering site (e.g. SIN) is stored with the result. Redirects are never followed, so an operator's captive portal is reported as an error, not as a
   measurement.
 - **Settings:** written for teachers and students; every option explains itself.
   - Logging, Speed test and Traffic capture options.
@@ -156,7 +156,7 @@ Design decisions: [cell parsing](docs/decisions/001-cell-parsing.md),
 Sessions and exports contain your precise location, the cells you used and your phone model and operator. A traffic
 capture contains the network traffic of the captured apps. Everything stays on the phone until you export it.
 Problem reports also stay on the phone until you send one. NetLogger has no account, no analytics and no upload. It only contacts the OpenStreetMap tile server, the speed test
-server you set (and Cloudflare if you turn it on), and Google Play services for the location.
+server you set or Cloudflare (only when you run a test), and Google Play services for the location.
 
 ## Licence
 

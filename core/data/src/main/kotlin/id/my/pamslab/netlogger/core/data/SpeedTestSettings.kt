@@ -12,17 +12,13 @@ import javax.inject.Singleton
 
 /**
  * Speed test server URLs, set in Settings. Empty until the user enters a server: nothing points at a particular
- * server by default. The public secondary target ([SpeedTestConfig.cloudflare]) is off until the user enables it.
+ * server by default. The public Cloudflare test ([SpeedTestConfig.cloudflare]) needs no setting: Live always offers it
+ * as its own button, never as the default (2026-10-17; the earlier on/off switch hid it behind a grey link).
  */
 interface SpeedTestSettings {
     val config: StateFlow<SpeedTestConfig>
 
-    /** Offer the public secondary target next to the user's server. */
-    val publicTargetEnabled: StateFlow<Boolean>
-
     fun save(pingUrl: String, downloadUrl: String, uploadUrl: String)
-
-    fun setPublicTargetEnabled(enabled: Boolean)
 }
 
 /** SharedPreferences (no extra dependency for three strings). */
@@ -34,8 +30,6 @@ class SharedPreferencesSpeedTestSettings @Inject constructor(
     private val prefs = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
     private val _config = MutableStateFlow(read())
     override val config: StateFlow<SpeedTestConfig> = _config.asStateFlow()
-    private val _public = MutableStateFlow(prefs.getBoolean(KEY_PUBLIC, false))
-    override val publicTargetEnabled: StateFlow<Boolean> = _public.asStateFlow()
 
     @SuppressLint("UseKtx") // core-ktx is not a dependency of core:data; not worth one for a single edit.
     override fun save(pingUrl: String, downloadUrl: String, uploadUrl: String) {
@@ -45,12 +39,6 @@ class SharedPreferencesSpeedTestSettings @Inject constructor(
             .putString(KEY_UPLOAD, uploadUrl.trim())
             .apply()
         _config.value = read()
-    }
-
-    @SuppressLint("UseKtx")
-    override fun setPublicTargetEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_PUBLIC, enabled).apply()
-        _public.value = enabled
     }
 
     private fun read() = SpeedTestConfig(
@@ -64,6 +52,5 @@ class SharedPreferencesSpeedTestSettings @Inject constructor(
         const val KEY_PING = "pingUrl"
         const val KEY_DOWNLOAD = "downloadUrl"
         const val KEY_UPLOAD = "uploadUrl"
-        const val KEY_PUBLIC = "publicTarget"
     }
 }
